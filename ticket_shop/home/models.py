@@ -1,6 +1,6 @@
 from django.db import models
-
-
+from django.db.models.signals import pre_save,post_save,pre_migrate
+from django.contrib.auth import get_user_model
 
 
 class Cars(models.Model):
@@ -22,36 +22,75 @@ class Cars(models.Model):
 class Travel(models.Model):
     car = models.ForeignKey(Cars,on_delete=models.CASCADE)
     time = models.DateTimeField()
-    price = models.PositiveIntegerField()
-    orogin = models.CharField(max_length=255)
+    price = models.PositiveIntegerField(default=0)
+    origin = models.CharField(max_length=255)
     destination = models.CharField(max_length=255)
-    destance = models.CharField(default='0')
-    
+    destance = models.PositiveIntegerField(default='0')
+    valid =models.BooleanField(default=False)
+    sell_chair = models.SmallIntegerField(default=0,)
+    #chairmaximum foreignkey car.chair
+        
     
     def __str__(self):
-        # from home.destination import main
-        # main(self.orogin,self.destination)
         return f"{self.destination}"
     
-
+    def sell_chairs(self):
+        self.sell_chair += 1
+        return self.save(self)
+    
+    
+    
 class Distance(models.Model):
     origin = models.CharField(max_length=255)
     destination = models.CharField(max_length=255)
-    o_d = models.CharField(max_length=255)
+    o_d = models.PositiveIntegerField(default='0')
     
     def __str__(self):
         return self.origin
     
     
-# def create_distance(sender,**kwargs):
-#     d = Distance.objects.filter(origin=kwargs['instance'].origin,destination=kwargs['instance'].destination)
-#     if d.exists():
-#         pass
     
+def create_distance(sender,instance,**kwargs):
+    d = Distance.objects.filter(origin=instance.origin, destination=instance.destination)
+    
+    if d.exists():
+        instance.destance = d[0].o_d
+        
+    else:
+        from home.destination import main
+        destance = main(place1=instance.origin,place2=instance.destination)
+        instance.destance = int(destance) 
+    if not instance.destance == 0:
+        instance.valid = True
+        instance.price = instance.destance * 1200
+    else:
+        instance.valid=False
+        print('-'*90)
+    # instance.save()
+        
 
-    # try:
-         
-    # except:
-    #     pass 
+pre_save.connect(receiver=create_distance,sender=Travel)
+
+
+
+class Ticket(models.Model):
+    user = models.ForeignKey('accounts.User',on_delete=models.CASCADE)
+    travel = models.ForeignKey(Travel,on_delete=models.CASCADE)
+    paid = models.BooleanField(default=False)
     
+    def __str__(self) :
+        return f'{self.user}-{self.travel}'
+    
+    
+    
+    def save(self, *args, **kwargs) :
+        user = get_user_model().objects.get(email=self.user)
+        travel_price = self.travel.price
+        price = user.wallet-travel_price
+        if 0<=price:
+            user.wallet=price
+            self.paid = True
+            self.travel.sell_chairs()
+            user.save()
+        super(Ticket,self).save(*args, **kwargs)
     
