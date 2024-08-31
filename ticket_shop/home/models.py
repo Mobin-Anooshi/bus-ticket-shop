@@ -1,7 +1,6 @@
 from django.db import models
 from django.db.models.signals import pre_save,post_save,pre_migrate
-from django.contrib.auth import get_user_model
-
+from django.contrib.auth import get_user_model  
 
 class Cars(models.Model):
     choice_car = {
@@ -21,15 +20,17 @@ class Cars(models.Model):
 
 class Travel(models.Model):
     car = models.ForeignKey(Cars,on_delete=models.CASCADE)
-    time = models.DateTimeField()
+    driver = models.ForeignKey('accounts.Driver',on_delete=models.CASCADE)
+    date = models.DateField()
+    time = models.TimeField()
     price = models.PositiveIntegerField(default=0)
     origin = models.CharField(max_length=255)
     destination = models.CharField(max_length=255)
     destance = models.PositiveIntegerField(default='0')
     valid =models.BooleanField(default=False)
     sell_chair = models.SmallIntegerField(default=0,)
-    #chairmaximum foreignkey car.chair
         
+    
     
     def __str__(self):
         return f"{self.destination}"
@@ -94,3 +95,17 @@ class Ticket(models.Model):
             user.save()
         super(Ticket,self).save(*args, **kwargs)
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        # St_hr = math.ceil(self.destance/80)
+        # hr = self.time.time()
+        # hr = format(hr.hour)
+        # if hr < time < hr+St_hr+1 :
+        #     return ValidationError('you cant select this time')
