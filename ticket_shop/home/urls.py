@@ -5,4 +5,5 @@ from home import views
 urlpatterns = [
     path('',views.HomeView.as_view()),
     path('create/',views.CreateTravel.as_view()),
+    path('ticket/',views.UserBuyTicket.as_view())
 ]

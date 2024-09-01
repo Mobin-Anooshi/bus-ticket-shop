@@ -1,7 +1,9 @@
 from rest_framework import serializers
-from home.models import Travel
+from home.models import Travel,Ticket
 import math
-from home.destination import main
+from accounts.models import User
+from django.shortcuts import get_object_or_404
+
 
 
 
@@ -19,10 +21,12 @@ class CreateTravelSerializers(serializers.ModelSerializer):
         model=Travel
         fields = ('car','driver','origin','destination','time','date')
     
-    def create(self, validated_data):
+    def create(self, validated_data,request):
+        print(request)
         return Travel.objects.create(**validated_data)
     
-    def validate(self,data):
+    def validate(self,data,request):
+        print(request)
         car= data.get('car')
         time = data.get('time').hour
         date = data.get('date')
@@ -36,4 +40,23 @@ class CreateTravelSerializers(serializers.ModelSerializer):
             raise serializers.ValidationError('bus in travel')
         return data
         
-            
+
+class BuyTicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = ('travel',)
+    def create(self, validated_data,request):
+        user = User.objects.get(pk=request.user.id)
+        return Ticket.objects.create(user = user , travel=validated_data['travel'],paid=True)
+    
+    def validate(self, data):
+        user = self.context.get('user')
+        user=get_object_or_404(User , pk=user)
+        travel = get_object_or_404(Travel ,pk=data.get('travel').id)
+        if user.wallet>= travel.price :
+            user.wallet -=travel.price
+            user.save()
+            return data
+        else :
+            raise serializers.ValidationError('you dont have any mony')
+        

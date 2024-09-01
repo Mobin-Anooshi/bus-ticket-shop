@@ -84,28 +84,3 @@ class Ticket(models.Model):
     
     
     
-    def save(self, *args, **kwargs) :
-        user = get_user_model().objects.get(email=self.user)
-        travel_price = self.travel.price
-        price = user.wallet-travel_price
-        if 0<=price:
-            user.wallet=price
-            self.paid = True
-            self.travel.sell_chairs()
-            user.save()
-        super(Ticket,self).save(*args, **kwargs)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-        # St_hr = math.ceil(self.destance/80)
-        # hr = self.time.time()
-        # hr = format(hr.hour)
-        # if hr < time < hr+St_hr+1 :
-        #     return ValidationError('you cant select this time')
